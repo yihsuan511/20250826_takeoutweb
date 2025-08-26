@@ -225,7 +225,7 @@
     price: item.price
   }));
 
-  fetch('http://localhost:3000/api/orders', {
+  fetch('https://two0250811-2.onrender.com/api/orders', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ items: itemsToSend, total_price: total, phone: currentUser.phone })
@@ -268,13 +268,13 @@
         try {
           let response;
           if (type === "register") {
-            response = await fetch('http://localhost:3000/api/member/register', {
+            response = await fetch('https://two0250811-2.onrender.com/api/member/register', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ name, phone, password })
             });
           } else {
-            response = await fetch('http://localhost:3000/api/member/login', {
+            response = await fetch('https://two0250811-2.onrender.com/api/member/login', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ phone, password })
@@ -361,3 +361,4 @@
   </script>
 </body>
 </html>
+
