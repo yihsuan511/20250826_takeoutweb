@@ -39,6 +39,38 @@
     .modal-submit { width: 100%; padding: 10px; background-color: #66b; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
     .modal-submit:hover { background-color: #e65c00; }
     .close { color: #aaa; font-size: 28px; position: absolute; top: 10px; right: 20px; cursor: pointer; }
+    .reservation-section {
+      margin-top: 15px;
+      padding: 15px;
+      background: #fdfdfd;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      animation: fadeIn 0.4s ease-in-out;
+    }
+    .reservation-section h3 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .reservation-input {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .reservation-input select, .reservation-input input {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+    .reservation-input select:hover, .reservation-input input:hover {
+      border-color: #666;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
     #backToTopBtn { display: none; position: fixed; bottom: 30px; right: 30px; z-index: 1000; background: #66b; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); text-align: center; line-height: 50px; }
   </style>
 </head>
@@ -76,7 +108,7 @@
     <div class="modal" id="orderModal">
       <div class="modal-content" style="max-width:600px; text-align:center;">
         <span class="close" onclick="closeOrderModal()">&times;</span>
-        <h2 style="font-size:28px; color:#e65c00;">訂單完成 ✅</h2>
+        <h2 style="font-size:28px; color:#66b;">訂單完成 ✅</h2>
         <p id="orderNumber" style="font-size:22px; font-weight:bold; margin:15px 0;"></p>
         <p id="pickupTime" style="font-size:20px; margin:10px 0;"></p>
         <div id="orderDetails" style="text-align:left; margin:20px 0; font-size:18px;"></div>
@@ -89,10 +121,17 @@
     <div class="menu" id="orderForm">
       <h2>吃得飽家常牛肉麵</h2>
       <p style="font-size: 14px;">(02)8931-3318 (每周一公休)</p>
+       <!-- 時間選擇區塊 -->
+      <div class="reservation-section">
+        <h3>選擇用餐日期與時間</h3>
+        <div class="reservation-input">
+          <input type="date" id="reservationDate" />
+          <select id="reservationTime"></select>
+        </div>
+      </div>
       <div id="menuItems"></div>
       <button class="submit-btn" id="submitOrder">送出訂單</button>
     </div>
-
     <div class="preview">
       <h2>已選擇品項（點擊刪除）</h2>
       <ul id="selectedItems"></ul>
@@ -105,6 +144,7 @@
     const menuItemsDiv = document.getElementById("menuItems");
     const selectedItems = document.getElementById("selectedItems");
     const totalPrice = document.getElementById("totalPrice");
+
     let orderList = [];
     let currentUser = null;
 
@@ -173,21 +213,45 @@
             customization = { 麵條: noodle, 碗型: size, 辣度: spicy };
           }
 
-          const itemTotal = (item.price + extraPrice) * qty;
+  const finalPrice = item.price + extraPrice;
+        
+        // 檢查是否已存在相同的品項（包含完全相同的客製化選項）
+        const existingItemIndex = orderList.findIndex(orderItem => 
+          orderItem.name === item.name && 
+          orderItem.price === finalPrice &&
+          areCustomizationsEqual(orderItem.customization, customization)
+        );
+
+        if (existingItemIndex !== -1) {
+          // 如果找到相同品項，則合併數量
+          orderList[existingItemIndex].quantity += qty;
+          
+          // 更新顯示文字
+          const totalItemPrice = orderList[existingItemIndex].price * orderList[existingItemIndex].quantity;
+          orderList[existingItemIndex].text = `${item.name}${customizationText} x ${orderList[existingItemIndex].quantity} = ${totalItemPrice} 元`;
+        } else {
+          // 如果沒有找到相同品項，則新增
+          const itemTotal = finalPrice * qty;
           const orderItem = {
             name: item.name,
-            price: item.price + extraPrice,
+            price: finalPrice,
             quantity: qty,
             customization,
             text: `${item.name}${customizationText} x ${qty} = ${itemTotal} 元`,
           };
-
           orderList.push(orderItem);
-          renderCart();
+        }
+
+        renderCart();
         });
       });
     }
-
+      function areCustomizationsEqual(c1, c2) {
+    const keys1 = Object.keys(c1);
+    const keys2 = Object.keys(c2);
+    if (keys1.length !== keys2.length) return false;
+    return keys1.every(key => c1[key] === c2[key]);
+  }
     function renderCart() {
       selectedItems.innerHTML = '';
       let total = 0;
@@ -206,42 +270,46 @@
 
     // 送單事件
     document.getElementById("submitOrder").addEventListener("click", () => {
-  if (!currentUser) {
-    if (confirm("需要先會員登入才能送出訂單，是否要立即登入？")) {
-      openModal('login'); // 打開登入視窗
-    }
-    return;
-  }
-  if (orderList.length === 0) {
-    alert("請先加入至少一項餐點！");
-    return;
-  }
+      if (!currentUser) {
+        if (confirm("需要先會員登入才能送出訂單，是否要立即登入？")) {
+          openModal('login'); // 打開登入視窗
+        }
+        return;
+      }
+      if (orderList.length === 0) {
+        alert("請先加入至少一項餐點！");
+        return;
+      }
+      const selectedPickupTime = `${reservationDate.value} ${reservationTime.value}`;
+      const total = orderList.reduce((sum, i) => sum + i.price * i.quantity, 0);
+      const itemsToSend = orderList.map(item => ({
+        item_name: item.name,
+        quantity: item.quantity,
+        custom_options: JSON.stringify(item.customization),
+        price: item.price
+      }));
+        fetch('https://two0250811-2.onrender.com/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            items: itemsToSend, 
+            total_price: total, 
+            phone: currentUser.phone,  
+            pickup_time: selectedPickupTime 
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          showOrderModal(data.order_id, total, itemsToSend, selectedPickupTime);  // 傳四個參數
+          orderList = [];
+          renderCart();
+        })
 
-  const total = orderList.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const itemsToSend = orderList.map(item => ({
-    item_name: item.name,
-    quantity: item.quantity,
-    custom_options: JSON.stringify(item.customization),
-    price: item.price
-  }));
-
-  fetch('https://two0250811-2.onrender.com/api/orders', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ items: itemsToSend, total_price: total, phone: currentUser.phone })
-  })
-  .then(res => res.json())
-  .then(data => {
-    showOrderModal(data.order_id, total, itemsToSend);  // 傳三個參數
-    orderList = [];
-    renderCart();
-  })
-
-  .catch(err => {
-    console.error(err);
-    alert("送出訂單時發生錯誤，請稍後再試。");
-  });
-});
+        .catch(err => {
+          console.error(err);
+          alert("送出訂單時發生錯誤，請稍後再試。");
+        });
+      });
 
 
     // 回頂部按鈕
@@ -333,9 +401,9 @@
       updateAuthUI();
     }
 
-    function showOrderModal(orderId, total, items = []) {
+function showOrderModal(orderId, total, items = [], pickupTime) {
   document.getElementById("orderNumber").textContent = `訂單編號：#${orderId}`;
-  document.getElementById("pickupTime").textContent = `預估取餐時間：約 15~20 分鐘`;
+  document.getElementById("pickupTime").textContent = `預估取餐時間：約 ${pickupTime}`; // 使用選擇時間
 
   let detailsHtml = "<ul>";
   items.forEach(i => {
@@ -348,16 +416,64 @@
   document.getElementById("orderModal").style.display = "flex";
 }
 
-    function closeOrderModal() {
-      document.getElementById("orderModal").style.display = "none";
-    }
+function closeOrderModal() {
+  document.getElementById("orderModal").style.display = "none";
+}
 
+// 取餐時間選擇
+const reservationDate = document.getElementById("reservationDate");
+const reservationTime = document.getElementById("reservationTime");
 
-    // 初始化登入狀態
-    if (sessionStorage.getItem("phone") && sessionStorage.getItem("name")) {
-      currentUser = { phone: sessionStorage.getItem("phone"), name: sessionStorage.getItem("name") };
-      updateAuthUI();
+// 限制只能選今天到 30 天內
+const today = new Date();
+const maxDate = new Date();
+maxDate.setDate(today.getDate() + 30);
+
+reservationDate.min = today.toISOString().split("T")[0];
+reservationDate.max = maxDate.toISOString().split("T")[0];
+reservationDate.value = today.toISOString().split("T")[0]; // 預設今天
+
+function generateTimeOptions(selectedDate) {
+  reservationTime.innerHTML = ""; 
+  const startHour = 11;
+  const endHour = 20; // 到 20:00
+  const latestMinute = 30; // 最晚 19:30
+
+  let now = new Date();
+  let isToday = selectedDate.toDateString() === now.toDateString();
+
+  for (let hour = startHour; hour < endHour; hour++) {
+    for (let minute of [0, 30]) {
+      if (hour === 19 && minute > latestMinute) continue;
+
+      let optionTime = new Date(selectedDate);
+      optionTime.setHours(hour, minute, 0, 0);
+
+      if (isToday && optionTime <= now) continue; // 今天不能選過去時間
+
+      let timeStr = optionTime.toTimeString().slice(0,5); // HH:MM
+      let option = document.createElement("option");
+      option.value = timeStr;
+      option.textContent = timeStr;
+      reservationTime.appendChild(option);
     }
+  }
+}
+
+// 預設今天的時間選項
+generateTimeOptions(today);
+
+// 當日期改變時，重新生成時間
+reservationDate.addEventListener("change", () => {
+  let selectedDate = new Date(reservationDate.value);
+  generateTimeOptions(selectedDate);
+});
+
+// 初始化登入狀態
+if (sessionStorage.getItem("phone") && sessionStorage.getItem("name")) {
+    currentUser = { phone: sessionStorage.getItem("phone"), name: sessionStorage.getItem("name") };
+    updateAuthUI();
+  }
   </script>
 </body>
 </html>
