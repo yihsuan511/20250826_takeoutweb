@@ -424,10 +424,10 @@ function closeOrderModal() {
 const reservationDate = document.getElementById("reservationDate");
 const reservationTime = document.getElementById("reservationTime");
 
-// 限制只能選今天到 30 天內
+// 限制只能選今天到 1 天內
 const today = new Date();
 const maxDate = new Date();
-maxDate.setDate(today.getDate() + 30);
+maxDate.setDate(today.getDate() + 1);
 
 reservationDate.min = today.toISOString().split("T")[0];
 reservationDate.max = maxDate.toISOString().split("T")[0];
@@ -443,20 +443,20 @@ function generateTimeOptions(selectedDate) {
   let isToday = selectedDate.toDateString() === now.toDateString();
 
   for (let hour = startHour; hour < endHour; hour++) {
-    for (let minute of [0, 30]) {
-      if (hour === 19 && minute > latestMinute) continue;
+    for (let minute = 0; minute < 60; minute += 10) {
+        if (hour === 19 && minute > latestMinute) continue;
 
-      let optionTime = new Date(selectedDate);
-      optionTime.setHours(hour, minute, 0, 0);
+        let optionTime = new Date(selectedDate);
+        optionTime.setHours(hour, minute, 0, 0);
 
-      if (isToday && optionTime <= now) continue; // 今天不能選過去時間
+        if (isToday && optionTime <= now) continue; // 今天不能選過去時間
 
-      let timeStr = optionTime.toTimeString().slice(0,5); // HH:MM
-      let option = document.createElement("option");
-      option.value = timeStr;
-      option.textContent = timeStr;
-      reservationTime.appendChild(option);
-    }
+        let timeStr = optionTime.toTimeString().slice(0,5); // HH:MM
+        let option = document.createElement("option");
+        option.value = timeStr;
+        option.textContent = timeStr;
+        reservationTime.appendChild(option);
+      }
   }
 }
 
@@ -477,4 +477,5 @@ if (sessionStorage.getItem("phone") && sessionStorage.getItem("name")) {
   </script>
 </body>
 </html>
+
 
