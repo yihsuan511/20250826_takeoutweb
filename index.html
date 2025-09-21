@@ -103,7 +103,7 @@
   </div>
 
   <button id="backToTopBtn" title="回到頂部">↑</button>
-  
+ 
   <!-- 訂單完成大視窗 Modal -->
     <div class="modal" id="orderModal">
       <div class="modal-content" style="max-width:600px; text-align:center;">
@@ -198,7 +198,6 @@
         div.querySelector(".addBtn").addEventListener("click", () => {
           const qty = parseInt(div.querySelector(".qtyInput").value);
           if (qty <= 0) return;
-
           let extraPrice = 0;
           let customizationText = '';
           let customization = {};
@@ -209,15 +208,16 @@
             const spicy = div.querySelector(".spicy").value;
             if (size.includes("大碗")) extraPrice = 10;
 
+
             customizationText = `（${noodle}｜${size}｜${spicy}）`;
             customization = { 麵條: noodle, 碗型: size, 辣度: spicy };
           }
 
   const finalPrice = item.price + extraPrice;
-        
+       
         // 檢查是否已存在相同的品項（包含完全相同的客製化選項）
-        const existingItemIndex = orderList.findIndex(orderItem => 
-          orderItem.name === item.name && 
+        const existingItemIndex = orderList.findIndex(orderItem =>
+          orderItem.name === item.name &&
           orderItem.price === finalPrice &&
           areCustomizationsEqual(orderItem.customization, customization)
         );
@@ -225,7 +225,7 @@
         if (existingItemIndex !== -1) {
           // 如果找到相同品項，則合併數量
           orderList[existingItemIndex].quantity += qty;
-          
+         
           // 更新顯示文字
           const totalItemPrice = orderList[existingItemIndex].price * orderList[existingItemIndex].quantity;
           orderList[existingItemIndex].text = `${item.name}${customizationText} x ${orderList[existingItemIndex].quantity} = ${totalItemPrice} 元`;
@@ -241,7 +241,6 @@
           };
           orderList.push(orderItem);
         }
-
         renderCart();
         });
       });
@@ -291,11 +290,12 @@
         fetch('https://two0250811-2.onrender.com/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            items: itemsToSend, 
-            total_price: total, 
+          body: JSON.stringify({
+            items: itemsToSend,
+            total_price: total,
             phone: currentUser.phone,  
-            pickup_time: selectedPickupTime 
+            // pickup_time: selectedPickupTime,
+            table_number:"外帶"
           })
         })
         .then(res => res.json())
@@ -304,13 +304,11 @@
           orderList = [];
           renderCart();
         })
-
         .catch(err => {
-          console.error(err);
+          console.error('詳細錯誤:',err);
           alert("送出訂單時發生錯誤，請稍後再試。");
         });
       });
-
 
     // 回頂部按鈕
     document.getElementById("backToTopBtn").onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -367,7 +365,6 @@
           alert("網路錯誤，請稍後再試");
         }
       };
-
       modal.style.display = "flex";
     }
 
@@ -401,81 +398,80 @@
       updateAuthUI();
     }
 
-function showOrderModal(orderId, total, items = [], pickupTime) {
-  document.getElementById("orderNumber").textContent = `訂單編號：#${orderId}`;
-  document.getElementById("pickupTime").textContent = `預估取餐時間：約 ${pickupTime}`; // 使用選擇時間
+    function showOrderModal(orderId, total, items = [], pickupTime) {
+      document.getElementById("orderNumber").textContent = `訂單編號：#${orderId}`;
+      document.getElementById("pickupTime").textContent = `預估取餐時間：約 ${pickupTime}`; // 使用選擇時間
 
-  let detailsHtml = "<ul>";
-  items.forEach(i => {
-    detailsHtml += `<li>${i.item_name} x ${i.quantity} - ${i.price} 元</li>`;
-  });
-  detailsHtml += "</ul>";
-  document.getElementById("orderDetails").innerHTML = detailsHtml;
+      let detailsHtml = "<ul>";
+      items.forEach(i => {
+        detailsHtml += `<li>${i.item_name} x ${i.quantity} - ${i.price} 元</li>`;
+      });
+      detailsHtml += "</ul>";
+      document.getElementById("orderDetails").innerHTML = detailsHtml;
 
-  document.getElementById("orderTotal").textContent = `總金額：${total} 元`;
-  document.getElementById("orderModal").style.display = "flex";
-}
+      document.getElementById("orderTotal").textContent = `總金額：${total} 元`;
+      document.getElementById("orderModal").style.display = "flex";
+    }
 
-function closeOrderModal() {
-  document.getElementById("orderModal").style.display = "none";
-}
+    function closeOrderModal() {
+      document.getElementById("orderModal").style.display = "none";
+    }
 
-// 取餐時間選擇
-const reservationDate = document.getElementById("reservationDate");
-const reservationTime = document.getElementById("reservationTime");
+    // 取餐時間選擇
+    const reservationDate = document.getElementById("reservationDate");
+    const reservationTime = document.getElementById("reservationTime");
 
-// 限制只能選今天到 1 天內
-const today = new Date();
-const maxDate = new Date();
-maxDate.setDate(today.getDate() + 1);
+    // 限制只能選今天到 30 天內
+    const today = new Date();
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + 1);
 
-reservationDate.min = today.toISOString().split("T")[0];
-reservationDate.max = maxDate.toISOString().split("T")[0];
-reservationDate.value = today.toISOString().split("T")[0]; // 預設今天
+    reservationDate.min = today.toISOString().split("T")[0];
+    reservationDate.max = maxDate.toISOString().split("T")[0];
+    reservationDate.value = today.toISOString().split("T")[0]; // 預設今天
 
-function generateTimeOptions(selectedDate) {
-  reservationTime.innerHTML = ""; 
-  const startHour = 11;
-  const endHour = 20; // 到 20:00
-  const latestMinute = 30; // 最晚 19:30
 
-  let now = new Date();
-  let isToday = selectedDate.toDateString() === now.toDateString();
+    function generateTimeOptions(selectedDate) {
+        reservationTime.innerHTML = "";
+        const startHour = 11;
+        const endHour = 20; // 到 20:00
+        const latestMinute = 30; // 最晚 19:30
 
-  for (let hour = startHour; hour < endHour; hour++) {
-    for (let minute = 0; minute < 60; minute += 10) {
-        if (hour === 19 && minute > latestMinute) continue;
+        let now = new Date();
+        let isToday = selectedDate.toDateString() === now.toDateString();
 
-        let optionTime = new Date(selectedDate);
-        optionTime.setHours(hour, minute, 0, 0);
+        for (let hour = startHour; hour < endHour; hour++) {
+        for (let minute = 0; minute < 60; minute += 10) {
+          if (hour === 19 && minute > latestMinute) continue;
 
-        if (isToday && optionTime <= now) continue; // 今天不能選過去時間
+          let optionTime = new Date(selectedDate);
+          optionTime.setHours(hour, minute, 0, 0);
 
-        let timeStr = optionTime.toTimeString().slice(0,5); // HH:MM
-        let option = document.createElement("option");
-        option.value = timeStr;
-        option.textContent = timeStr;
-        reservationTime.appendChild(option);
+          if (isToday && optionTime <= now) continue; // 今天不能選過去時間
+
+          let timeStr = optionTime.toTimeString().slice(0,5); // HH:MM
+          let option = document.createElement("option");
+          option.value = timeStr;
+          option.textContent = timeStr;
+          reservationTime.appendChild(option);
+        }
       }
-  }
-}
+    }
 
-// 預設今天的時間選項
-generateTimeOptions(today);
+    // 預設今天的時間選項
+    generateTimeOptions(today);
 
-// 當日期改變時，重新生成時間
-reservationDate.addEventListener("change", () => {
-  let selectedDate = new Date(reservationDate.value);
-  generateTimeOptions(selectedDate);
-});
+    // 當日期改變時，重新生成時間
+    reservationDate.addEventListener("change", () => {
+      let selectedDate = new Date(reservationDate.value);
+      generateTimeOptions(selectedDate);
+    });
 
-// 初始化登入狀態
-if (sessionStorage.getItem("phone") && sessionStorage.getItem("name")) {
-    currentUser = { phone: sessionStorage.getItem("phone"), name: sessionStorage.getItem("name") };
-    updateAuthUI();
-  }
-  </script>
-</body>
+    // 初始化登入狀態
+    if (sessionStorage.getItem("phone") && sessionStorage.getItem("name")) {
+        currentUser = { phone: sessionStorage.getItem("phone"), name: sessionStorage.getItem("name") };
+        updateAuthUI();
+      }
+      </script>
+  </body>
 </html>
-
-
