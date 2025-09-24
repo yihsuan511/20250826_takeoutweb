@@ -213,7 +213,7 @@
             customization = { 麵條: noodle, 碗型: size, 辣度: spicy };
           }
 
-  const finalPrice = item.price + extraPrice;
+        const finalPrice = item.price + extraPrice;
        
         // 檢查是否已存在相同的品項（包含完全相同的客製化選項）
         const existingItemIndex = orderList.findIndex(orderItem =>
@@ -267,19 +267,57 @@
       totalPrice.textContent = `總價：${total} 元`;
     }
 
+    // 驗證會員是否仍然存在
+    async function validateMemberExists(phone) {
+      try {
+        const response = await fetch(`http://localhost:3000/api/member/${phone}`);
+        if (!response.ok) {
+          return false; // 會員不存在
+        }
+        return true; // 會員存在
+      } catch (error) {
+        console.error('驗證會員失敗:', error);
+        return false;
+      }
+    }
+
     // 送單事件
-    document.getElementById("submitOrder").addEventListener("click", () => {
+    document.getElementById("submitOrder").addEventListener("click", async() => {
+      // 先獲取預約時間
+      const reservationDate = document.getElementById("reservationDate");
+      const reservationTime = document.getElementById("reservationTime");
+      
+      // 檢查是否選擇了預約時間
+      if (!reservationDate.value || !reservationTime.value) {
+        alert("請選擇取餐日期和時間！");
+        return;
+      }
+      
+      const reservationDateTime = new Date(`${reservationDate.value}T${reservationTime.value}:00`);
+      const taiwanOffset = 8 * 60;
+      const pickup_time = `${reservationDate.value}T${reservationTime.value}:00+08:00`;  //傳送給後端，包含正確時區資訊
+      const pickup_display = `${reservationDate.value} ${reservationTime.value}:00`; // 用於前端顯示，保持原本用戶選擇的時間格式
+      console.log('預約取餐時間:', pickup_time); // 除錯用
+      
       if (!currentUser) {
         if (confirm("需要先會員登入才能送出訂單，是否要立即登入？")) {
-          openModal('login'); // 打開登入視窗
+          openModal('login');
         }
+        return;
+      }
+
+      // 驗證會員是否仍然存在
+      const memberExists = await validateMemberExists(currentUser.phone);
+      if (!memberExists) {
+        alert("您的會員帳號已失效，請重新登入");
+        logout(); // 清除前端狀態
+        openModal('login');
         return;
       }
       if (orderList.length === 0) {
         alert("請先加入至少一項餐點！");
         return;
       }
-      const selectedPickupTime = `${reservationDate.value} ${reservationTime.value}`;
       const total = orderList.reduce((sum, i) => sum + i.price * i.quantity, 0);
       const itemsToSend = orderList.map(item => ({
         item_name: item.name,
@@ -287,28 +325,37 @@
         custom_options: JSON.stringify(item.customization),
         price: item.price
       }));
-        fetch('https://two0250811-2.onrender.com/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: itemsToSend,
-            total_price: total,
-            phone: currentUser.phone,  
-            // pickup_time: selectedPickupTime,
-            table_number:"外帶"
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
-          showOrderModal(data.order_id, total, itemsToSend, selectedPickupTime);  // 傳四個參數
-          orderList = [];
-          renderCart();
-        })
-        .catch(err => {
-          console.error('詳細錯誤:',err);
-          alert("送出訂單時發生錯誤，請稍後再試。");
-        });
+      const orderData = {
+        items: itemsToSend,
+        total_price: total,
+        phone: currentUser.phone,
+        pickup_time: pickup_time,
+        table_number: "外帶",
+        takeout: "外帶"
+    };
+    console.log('送出的訂單資料:', orderData);
+    try {
+      const response = await fetch('http://localhost:3000/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
       });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        showOrderModal(data.order_id, total, itemsToSend, pickup_display);
+        orderList = [];
+        renderCart();
+      } else {
+        console.error('訂單建立失敗:', data);
+        alert(`訂單建立失敗: ${data.message || '未知錯誤'}`);
+      }
+    } catch (err) {
+      console.error('網路請求失敗:', err);
+      alert("送出訂單時發生錯誤，請稍後再試。");
+    }
+  });
 
     // 回頂部按鈕
     document.getElementById("backToTopBtn").onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -334,13 +381,14 @@
         try {
           let response;
           if (type === "register") {
-            response = await fetch('https://two0250811-2.onrender.com/api/member/register', {
+            console.log("送出註冊資料:", { name, phone, password });
+            response = await fetch('http://localhost:3000/api/member/register', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ name, phone, password })
             });
           } else {
-            response = await fetch('https://two0250811-2.onrender.com/api/member/login', {
+            response = await fetch('http://localhost:3000/api/member/login', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ phone, password })
@@ -349,9 +397,13 @@
 
           const data = await response.json();
           if (response.ok) {
-            if (type === "register") currentUser = { name, phone };
+            if (type === "register"){   
+                // 註冊成功後不要直接設置 currentUser
+                alert("註冊成功！請重新登入");
+                // 切換到登入模式
+                openModal('login');
+            }
             else currentUser = { name: data.member.name, phone: data.member.phone };
-
             sessionStorage.setItem("phone", currentUser.phone);
             sessionStorage.setItem("name", currentUser.name);
             updateAuthUI();
@@ -361,8 +413,8 @@
             alert(data.error || "操作失敗，請確認資料後再試");
           }
         } catch (err) {
-          console.error(err);
-          alert("網路錯誤，請稍後再試");
+          console.error('Fetch 失敗:', err);
+          alert(`Fetch 失敗，可能是網路或 CORS 問題: ${err.message}`);
         }
       };
       modal.style.display = "flex";
@@ -397,10 +449,9 @@
       sessionStorage.removeItem("name");
       updateAuthUI();
     }
-
-    function showOrderModal(orderId, total, items = [], pickupTime) {
+    function showOrderModal(orderId, total, items = [], pickup_time) {
       document.getElementById("orderNumber").textContent = `訂單編號：#${orderId}`;
-      document.getElementById("pickupTime").textContent = `預估取餐時間：約 ${pickupTime}`; // 使用選擇時間
+      document.getElementById("pickupTime").textContent = `預估取餐時間：約 ${pickup_time}`; // 使用選擇時間
 
       let detailsHtml = "<ul>";
       items.forEach(i => {
@@ -421,7 +472,7 @@
     const reservationDate = document.getElementById("reservationDate");
     const reservationTime = document.getElementById("reservationTime");
 
-    // 限制只能選今天到 30 天內
+    // 限制只能選今天到明天
     const today = new Date();
     const maxDate = new Date();
     maxDate.setDate(today.getDate() + 1);
@@ -456,7 +507,7 @@
           reservationTime.appendChild(option);
         }
       }
-    }
+    };
 
     // 預設今天的時間選項
     generateTimeOptions(today);
@@ -467,6 +518,16 @@
       generateTimeOptions(selectedDate);
     });
 
+    // 加入監聽儲存變化，檢查會員是否被刪除
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'memberDeleted' && e.newValue === 'true') {
+        // 會員在其他頁面被刪除，清除當前狀態
+        logout();
+        localStorage.removeItem('memberDeleted');
+        alert('您的會員帳號已被刪除，請重新註冊');
+      }
+    });
+
     // 初始化登入狀態
     if (sessionStorage.getItem("phone") && sessionStorage.getItem("name")) {
         currentUser = { phone: sessionStorage.getItem("phone"), name: sessionStorage.getItem("name") };
@@ -475,4 +536,3 @@
       </script>
   </body>
 </html>
-
