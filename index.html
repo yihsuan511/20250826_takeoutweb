@@ -620,7 +620,7 @@
            const defaultPickupTime = `${defaultDate}T${defaultTime}:00+08:00`;
            console.log('檢查預設時間:', defaultPickupTime);
               
-          const response = await fetch(`http://localhost:3000/api/orders/check-capacity?pickup_time=${encodeURIComponent(defaultPickupTime)}`);
+          const response = await fetch(`https://two0250811-2.onrender.com/api/orders/check-capacity?pickup_time=${encodeURIComponent(defaultPickupTime)}`);
           const data = await response.json();
               
            console.log('頁面載入容量檢查結果:', data);
@@ -653,7 +653,7 @@
         capacityInfo.style.color = "#666";
         capacityInfo.textContent = "⏳ 檢查中...";
 
-        const res = await fetch(`http://localhost:3000/api/orders/check-capacity?pickup_time=${encodeURIComponent(pickup_time)}`);
+        const res = await fetch(`https://two0250811-2.onrender.com/api/orders/check-capacity?pickup_time=${encodeURIComponent(pickup_time)}`);
         const data = await res.json();
 
         if (data.canAcceptOrders) {
