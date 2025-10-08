@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>牛肉麵點餐系統（分類+客製化）</title>
+  <title>吃得飽牛肉麵 — 外帶點餐系統</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     /* --- 這裡保留你原本的 CSS --- */
@@ -295,8 +295,21 @@
       }
       
       const reservationDateTime = new Date(`${reservationDate.value}T${reservationTime.value}:00`);
-      const taiwanOffset = 8 * 60;
-      const pickup_time = `${reservationDate.value}T${reservationTime.value}:00+08:00`;  //傳送給後端，包含正確時區資訊
+      const localDateTime = `${reservationDate.value}T${reservationTime.value}:00`;
+      const pickupDate = new Date(localDateTime);
+
+      // 手動調整為台灣時區 (UTC+8)
+      // 假設用戶選擇的是台灣當地時間,需要轉換為正確的 UTC
+      const taiwanOffset = 8 * 60; // 8小時 = 480分鐘
+      const userTimezoneOffset = pickupDate.getTimezoneOffset(); // 用戶時區偏移(分鐘)
+      const offsetDiff = taiwanOffset + userTimezoneOffset;
+      pickupDate.setMinutes(pickupDate.getMinutes() - offsetDiff);
+
+      // 轉換為 ISO 字串傳給後端
+      const pickup_time = pickupDate.toISOString();
+
+      console.log('用戶選擇的時間:', localDateTime);
+      console.log('轉換後的 UTC 時間:', pickup_time);
       const pickup_display = `${reservationDate.value} ${reservationTime.value}:00`; // 用於前端顯示，保持原本用戶選擇的時間格式
       console.log('預約取餐時間:', pickup_time); // 除錯用
       
@@ -504,7 +517,7 @@
       
       const month = date.getMonth() + 1;
       const day = date.getDate();
-      const dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD 格式
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`; // YYYY-MM-DD 格式
       
       let displayText;
       if (i === 0) {
@@ -659,11 +672,11 @@
         if (data.canAcceptOrders) {
           capacityInfo.style.background = "#d4edda";
           capacityInfo.style.color = "#155724";
-          capacityInfo.textContent = `✅ ${data.message}（${data.current_orders}/${data.limit} 組）`;
+          capacityInfo.textContent = `✅ ${data.message} 目前${data.current_orders}/${data.limit} 組`;
         } else {
           capacityInfo.style.background = "#f8d7da";
           capacityInfo.style.color = "#721c24";
-          capacityInfo.textContent = `❌ ${data.message}（${data.current_orders}/${data.limit} 組）`;
+          capacityInfo.textContent = `❌ ${data.message} 目前${data.current_orders}/${data.limit} 組`;
         }
       } catch (error) {
         console.error("檢查容量失敗:", error);
