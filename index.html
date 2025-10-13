@@ -690,71 +690,78 @@
     }
     
     window.onload = () => {
-        renderCart(); // 先渲染現有的購物車
-        // 檢查是否有從歷史訂單帶過來的資料
-        const urlParams = new URLSearchParams(window.location.search);
-        const reorderParam = urlParams.get('reorder');
-        if (reorderParam) {
-          try {
-            // 從 Base64 解碼
-            const itemsJson = decodeURIComponent(escape(atob(reorderParam)));
-            const items = JSON.parse(itemsJson);
-            
-            if (Array.isArray(items) && items.length > 0) {
-              items.forEach(item => {
-                const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
-                const customText = Object.values(customOptions).length
-                  ? `(${Object.values(customOptions).join("|")})`
-                  : "";
-                
-                const itemTotal = item.price * item.quantity;
-                
-                orderList.push({
-                  name: item.item_name || item.name,
-                  price: item.price,
-                  quantity: item.quantity,
-                  customization: customOptions,
-                  text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`
-                });
+      renderCart(); // 先渲染現有的購物車
+
+      // 檢查是否有從歷史訂單帶過來的資料
+      const urlParams = new URLSearchParams(window.location.search);
+      const reorderParam = urlParams.get('reorder');
+
+      if (reorderParam) {
+        try {
+          // ✅ 正確的 Base64 解碼順序
+          const decodedBase64 = decodeURIComponent(reorderParam);
+          const decodedJson = atob(decodedBase64);
+          const items = JSON.parse(decodeURIComponent(escape(decodedJson)));
+
+          if (Array.isArray(items) && items.length > 0) {
+            items.forEach(item => {
+              const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
+              const customText = Object.values(customOptions).length
+                ? `（${Object.values(customOptions).join("｜")}）`
+                : "";
+              const itemTotal = item.price * item.quantity;
+              orderList.push({
+                name: item.item_name || item.name,
+                price: item.price,
+                quantity: item.quantity,
+                customization: customOptions,
+                text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`
               });
-              
-              renderCart();
-              alert("已將歷史訂單加入購物車!");
-              
-              // 清除 URL 參數(避免重複載入)
-              window.history.replaceState({}, document.title, window.location.pathname);
-            }
-          } catch (e) {
-            console.error("讀取再次訂購資料失敗", e);
+            });
+
+            renderCart();
+            alert("已將歷史訂單加入購物車！");
+
+            // ✅ 清除 URL 參數，避免重複載入
+            window.history.replaceState({}, document.title, window.location.pathname);
           }
+        } catch (e) {
+          console.error("讀取再次訂購資料失敗", e);
+          alert("讀取再次訂購資料失敗，請重新點餐。");
         }
+      }
 
-        const reorderData = localStorage.getItem("reorderItems");
-        if (reorderData && !reorderParam) {
-        const items = JSON.parse(reorderData);
-
-        items.forEach(item => {
-          // 將客製化文字組成顯示內容
-          const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
-          const customText = Object.values(customOptions).length
-            ? `（${Object.values(customOptions).join("｜")}）`
-            : "";
-          const itemTotal = item.price * item.quantity;
-          orderList.push({
-            name: item.item_name || item.name,
-            price: item.price,
-            quantity: item.quantity,
-            customization: customOptions,
-            text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`
+      // 🔁 若是從 localStorage 帶過來的（保險機制）
+      const reorderData = localStorage.getItem("reorderItems");
+      if (reorderData && !reorderParam) {
+        try {
+          const items = JSON.parse(reorderData);
+          items.forEach(item => {
+            const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
+            const customText = Object.values(customOptions).length
+              ? `（${Object.values(customOptions).join("｜")}）`
+              : "";
+            const itemTotal = item.price * item.quantity;
+            orderList.push({
+              name: item.item_name || item.name,
+              price: item.price,
+              quantity: item.quantity,
+              customization: customOptions,
+              text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`
+            });
           });
-        });
 
-        renderCart(); // 更新畫面
-        alert("已將歷史訂單加入購物車！");
+          renderCart();
+          alert("已將歷史訂單加入購物車！");
+        } catch (e) {
+          console.error("localStorage 讀取失敗", e);
         }
-        localStorage.removeItem("reorderItems");
+      }
+
+      localStorage.removeItem("reorderItems");
     };
     </script>
   </body>
 </html>
+
 
