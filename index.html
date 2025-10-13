@@ -685,6 +685,45 @@
         capacityInfo.textContent = "⚠️ 無法檢查時段容量，請稍後再試";
       }
     }
+    window.onload = () => { 
+      renderCart();
+      
+      const reorderData = localStorage.getItem("reorderItems");
+      if (reorderData) {
+        try {
+          const items = JSON.parse(reorderData);
+          
+          // 確認是有效的陣列資料才處理
+          if (Array.isArray(items) && items.length > 0) {
+            items.forEach(item => {
+              const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
+              const customText = Object.values(customOptions).length
+                ? `（${Object.values(customOptions).join("｜")}）`
+                : "";
+              
+              const itemTotal = item.price * item.quantity;
+              
+              orderList.push({
+                name: item.item_name || item.name,
+                price: item.price,
+                quantity: item.quantity,
+                customization: customOptions,
+                text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`
+              });
+            });
+            
+            renderCart();
+            alert("已將歷史訂單加入購物車！");
+          }
+        } catch (e) {
+          console.error("讀取再次訂購資料失敗", e);
+        }
+        
+        // 無論成功失敗都清除
+        localStorage.removeItem("reorderItems");
+      }
+    };
     </script>
   </body>
 </html>
+
