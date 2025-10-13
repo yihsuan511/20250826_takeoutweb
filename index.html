@@ -689,7 +689,14 @@
       }
     }
     
-    window.onload = () => {
+        window.onload = () => {
+      const savedPhone = localStorage.getItem("phone");
+      const savedName = localStorage.getItem("name");
+      if (savedPhone && savedName) {
+        currentUser = { phone: savedPhone, name: savedName };
+        updateAuthUI();
+      }
+
       renderCart(); // 先渲染現有的購物車
 
       // 檢查是否有從歷史訂單帶過來的資料
@@ -763,5 +770,6 @@
     </script>
   </body>
 </html>
+
 
 
