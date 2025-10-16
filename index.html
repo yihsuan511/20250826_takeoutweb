@@ -341,7 +341,9 @@
         item_name: item.name,
         quantity: item.quantity,
         custom_options: JSON.stringify(item.customization),
-        price: item.price
+        price: item.price,
+        table_number: "外帶",
+        takeout: "外帶"
       }));
       // 新增：檢查訂單容量
     try {
@@ -772,3 +774,4 @@
     </script>
   </body>
 </html>
+
