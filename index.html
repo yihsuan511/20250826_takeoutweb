@@ -279,7 +279,7 @@
     // 驗證會員是否仍然存在
     async function validateMemberExists(phone) {
       try {
-        const response = await fetch(`http://localhost:3000/api/member/${phone}`);
+        const response = await fetch(`https://two0250811-2.onrender.com/api/member/${phone}`);
         if (!response.ok) {
           return false; // 會員不存在
         }
@@ -349,7 +349,7 @@
       }));
       // 新增：檢查訂單容量
     try {
-        const capacityResponse = await fetch(`http://localhost:3000/api/orders/check-capacity?pickup_time=${encodeURIComponent(pickup_time)}`);
+        const capacityResponse = await fetch(`https://two0250811-2.onrender.com/api/orders/check-capacity?pickup_time=${encodeURIComponent(pickup_time)}`);
         const capacityData = await capacityResponse.json();
         
         console.log('時段容量檢查:', capacityData);
@@ -371,7 +371,7 @@
     };
     console.log('送出的訂單資料:', orderData);
     try {
-      const response = await fetch('http://localhost:3000/api/orders', {
+      const response = await fetch('https://two0250811-2.onrender.com/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
@@ -418,13 +418,13 @@
           let response;
           if (type === "register") {
             console.log("送出註冊資料:", { name, phone, password });
-            response = await fetch('http://localhost:3000/api/member/register', {
+            response = await fetch('https://two0250811-2.onrender.com/api/member/register', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ name, phone, password })
             });
           } else {
-            response = await fetch('http://localhost:3000/api/member/login', {
+            response = await fetch('https://two0250811-2.onrender.com/api/member/login', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ phone, password })
@@ -466,7 +466,7 @@
           <div class="dropdown">
             <button>歡迎回來！${currentUser.name}</button>
             <div class="dropdown-content">
-              <a href="歷史訂單.html?phone=${currentUser.phone}">🧾 歷史訂單</a>
+              <a href="https://two0250921-history.onrender.com?phone=${currentUser.phone}">🧾 歷史訂單</a>
               <a href="https://two0280811-4.onrender.com?phone=${currentUser.phone}">📝 編輯會員資料</a>
               <a href="#" onclick="logout()">🚪 登出</a>
             </div>
@@ -643,7 +643,7 @@
            const defaultPickupTime = `${defaultDate}T${defaultTime}:00+08:00`;
            console.log('檢查預設時間:', defaultPickupTime);
               
-          const response = await fetch(`http://localhost:3000/api/orders/check-capacity?pickup_time=${encodeURIComponent(defaultPickupTime)}`);
+          const response = await fetch(`https://two0250811-2.onrender.com/api/orders/check-capacity?pickup_time=${encodeURIComponent(defaultPickupTime)}`);
           const data = await response.json();
               
            console.log('頁面載入容量檢查結果:', data);
@@ -676,7 +676,7 @@
         capacityInfo.style.color = "#666";
         capacityInfo.textContent = "⏳ 檢查中...";
 
-        const res = await fetch(`http://localhost:3000/api/orders/check-capacity?pickup_time=${encodeURIComponent(pickup_time)}`);
+        const res = await fetch(`https://two0250811-2.onrender.com/api/orders/check-capacity?pickup_time=${encodeURIComponent(pickup_time)}`);
         const data = await res.json();
 
         if (data.canAcceptOrders) {
