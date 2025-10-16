@@ -418,28 +418,40 @@
         try {
           let response;
           if (type === "register") {
-            console.log("送出註冊資料:", { name, phone, password });
-            response = await fetch('${API_BASE}/api/member/register', {
+            // ... (fetch 註冊) ...
+            response = await fetch(`${API_BASE}/api/member/register`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ name, phone, password })
             });
           } else {
-            response = await fetch('${API_BASE}/api/member/login', {
+            // ... (fetch 登入) ...
+            response = await fetch(`${API_BASE}/api/member/login`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ phone, password })
             });
           }
 
-          const data = await response.json();
+          let data = {};
+          // ✅ 安全修正：檢查 Content-Type 避免解析非 JSON 的空回應
+          const contentType = response.headers.get("content-type");
+          const isJson = contentType && contentType.includes("application/json");
+
+          if (response.status !== 204 && isJson) {
+             // 嘗試解析 JSON，如果解析失敗則返回空物件
+             data = await response.json().catch(e => {
+                 console.error('JSON 解析失敗，可能伺服器回傳空內容:', e);
+                 return {}; 
+             });
+          }
+          
           if (response.ok) {
             if (type === "register"){   
-                // 註冊成功後不要直接設置 currentUser
                 alert("註冊成功！請重新登入");
-                // 切換到登入模式
                 openModal('login');
             }
+            // 確保 data.member 存在
             else currentUser = { name: data.member.name, phone: data.member.phone };
             sessionStorage.setItem("phone", currentUser.phone);
             sessionStorage.setItem("name", currentUser.name);
@@ -447,7 +459,8 @@
             closeModal();
             alert(type === "register" ? "註冊成功" : "登入成功");
           } else {
-            alert(data.error || "操作失敗，請確認資料後再試");
+            // 如果是非 200 狀態，顯示錯誤訊息或預設訊息
+            alert(data.error || "操作失敗，請確認資料後再試 (伺服器未回傳錯誤訊息)");
           }
         } catch (err) {
           console.error('Fetch 失敗:', err);
@@ -793,3 +806,4 @@
     </script>
   </body>
 </html>
+
