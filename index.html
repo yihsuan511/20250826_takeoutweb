@@ -697,8 +697,10 @@
     }
 
     window.onload = () => {
-      renderCart(); // 先渲染現有的購物車
-
+      // ✅ 先標記來源
+      localStorage.setItem("historySource", "外帶");
+      
+      // ✅ 恢復會員狀態
       if(localStorage.getItem("tempPhone")){
         currentUser = {
           phone: localStorage.getItem("tempPhone"),
@@ -707,6 +709,19 @@
         sessionStorage.setItem("phone", currentUser.phone);
         sessionStorage.setItem("name", currentUser.name);
         updateAuthUI();
+    
+        //清除臨時資料
+        localStorage.removeItem("tempPhone");
+        localStorage.removeItem("tempName");
+      }
+      
+      // ✅ 如果已經登入,就保存會員資訊
+      if(sessionStorage.getItem("phone")){
+        localStorage.setItem("tempPhone", sessionStorage.getItem("phone"));
+        localStorage.setItem("tempName", sessionStorage.getItem("name"));
+      }
+    
+      renderCart();
 
         //清除臨時資料
         localStorage.removeItem("tempPhone");
@@ -784,3 +799,4 @@
     </script>
   </body>
 </html>
+
