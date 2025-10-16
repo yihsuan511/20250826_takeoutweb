@@ -150,13 +150,8 @@
     let orderList = [];
     let currentUser = null;
 
-    // 標記來源為外帶
-    localStorage.setItem("historySource", "外帶");
-
-    if(sessionStorage.getItem("phone")){
-      localStorage.setItem("tempPhone", sessionStorage.getItem("phone"));
-      localStorage.setItem("tempName", sessionStorage.getItem("name"));
-    }
+     // 標記來源為外帶
+    // localStorage.setItem("historySource", "外帶");
 
     const menuData = {
       麵類: [{ name: "牛肉麵", price: 140 }, { name: "牛肉湯麵", price: 110 }, { name: "榨菜牛肉麵", price: 120 }, { name: "餛飩麵", price: 90 }, { name: "酸辣麵", price: 90 }, { name: "榨醬麵", price: 80 }, { name: "肉燥乾麵", price: 80 }],
@@ -698,38 +693,24 @@
     }
 
     window.onload = () => {
-      // ✅ 先標記來源
-      localStorage.setItem("historySource", "外帶");
-      
-      // ✅ 恢復會員狀態
-      if(localStorage.getItem("tempPhone")){
-        currentUser = {
-          phone: localStorage.getItem("tempPhone"),
-          name: localStorage.getItem("tempName")
-        };
-        sessionStorage.setItem("phone", currentUser.phone);
-        sessionStorage.setItem("name", currentUser.name);
-        updateAuthUI();
 
-        //清除臨時資料
-        localStorage.removeItem("tempPhone");
-        localStorage.removeItem("tempName");
-      }
-      
-      // ✅ 如果已經登入,就保存會員資訊
-      if(sessionStorage.getItem("phone")){
-        localStorage.setItem("tempPhone", sessionStorage.getItem("phone"));
-        localStorage.setItem("tempName", sessionStorage.getItem("name"));
-      }
       renderCart();
 
-      // 檢查是否有從歷史訂單帶過來的資料
+      // ✅ 只保留 sessionStorage 登入恢復
+      if (sessionStorage.getItem("phone") && sessionStorage.getItem("name")) {
+        currentUser = {
+          phone: sessionStorage.getItem("phone"),
+          name: sessionStorage.getItem("name")
+        };
+        updateAuthUI();
+      }
+
+      // ✅ 檢查是否有從歷史訂單帶過來的資料（URL方式）
       const urlParams = new URLSearchParams(window.location.search);
       const reorderParam = urlParams.get('reorder');
 
       if (reorderParam) {
         try {
-          // ✅ 正確的 Base64 解碼順序
           const decodedBase64 = decodeURIComponent(reorderParam);
           const decodedJson = atob(decodedBase64);
           const items = JSON.parse(decodeURIComponent(escape(decodedJson)));
@@ -752,8 +733,6 @@
 
             renderCart();
             alert("已將歷史訂單加入購物車！");
-
-            // ✅ 清除 URL 參數，避免重複載入
             window.history.replaceState({}, document.title, window.location.pathname);
           }
         } catch (e) {
@@ -761,37 +740,33 @@
           alert("讀取再次訂購資料失敗，請重新點餐。");
         }
       }
-
       // 🔁 若是從 localStorage 帶過來的（保險機制）
-      const reorderData = localStorage.getItem("reorderItems");
-      if (reorderData && !reorderParam) {
-        try {
-          const items = JSON.parse(reorderData);
-          items.forEach(item => {
-            const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
-            const customText = Object.values(customOptions).length
-              ? `（${Object.values(customOptions).join("｜")}）`
-              : "";
-            const itemTotal = item.price * item.quantity;
-            orderList.push({
-              name: item.item_name || item.name,
-              price: item.price,
-              quantity: item.quantity,
-              customization: customOptions,
-              text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`
-            });
-          });
+      // const reorderData = localStorage.getItem("reorderItems");
+      // if (reorderData && !reorderParam) {
+      //   try {
+      //     const items = JSON.parse(reorderData);
+      //     items.forEach(item => {
+      //       const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
+      //       const customText = Object.values(customOptions).length
+      //         ? `（${Object.values(customOptions).join("｜")}）`
+      //         : "";
+      //       const itemTotal = item.price * item.quantity;
+      //       orderList.push({
+      //         name: item.item_name || item.name,
+      //         price: item.price,
+      //         quantity: item.quantity,
+      //         customization: customOptions,
+      //         text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`
+      //       });
+      //     });
 
-          renderCart();
-          alert("已將歷史訂單加入購物車！");
-        } catch (e) {
-          console.error("localStorage 讀取失敗", e);
-        }
-      }
-      localStorage.removeItem("reorderItems");
+      //     renderCart();
+      //     alert("已將歷史訂單加入購物車！");
+      //   } catch (e) {
+      //     console.error("localStorage 讀取失敗", e);
+      //   }
+      // }
     }
     </script>
   </body>
 </html>
-
-
