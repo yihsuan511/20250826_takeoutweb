@@ -710,8 +710,14 @@
 
       if (reorderParam) {
         try {
-          // ✅ UTF-8 Base64 解碼
-          const bytes = Uint8Array.from(atob(reorderParam), c => c.charCodeAt(0));
+          // ✅ 將 URL-safe Base64 轉回標準 Base64
+          let base64 = reorderParam.replace(/-/g, '+').replace(/_/g, '/');
+          while (base64.length % 4) {
+            base64 += '=';
+          }
+
+          // ✅ Base64 → UTF-8 → JSON
+          const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
           const decoded = new TextDecoder().decode(bytes);
           const items = JSON.parse(decoded);
 
@@ -776,3 +782,4 @@
     </script>
   </body>
 </html>
+
