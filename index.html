@@ -317,12 +317,22 @@
       const pickup_display = `${reservationDate.value} ${reservationTime.value}:00`; // 用於前端顯示，保持原本用戶選擇的時間格式
       console.log('預約取餐時間:', pickup_time); // 除錯用
       
-      if (!currentUser) {
-        if (confirm("需要先會員登入才能送出訂單，是否要立即登入？")) {
-          openModal('login');
-        }
-        return;
+      const loggedInPhone = sessionStorage.getItem("phone");
+      if (!loggedInPhone) {
+          if (confirm("需要先會員登入才能送出訂單，是否要立即登入？")) {
+              openModal('login');
+          }
+          return;
       }
+
+// 如果有 sessionStorage，但 currentUser 可能沒設定，可以補：
+if (!currentUser) {
+    currentUser = {
+        phone: sessionStorage.getItem("phone"),
+        name: sessionStorage.getItem("name")
+    };
+    updateAuthUI();
+}
 
       // 驗證會員是否仍然存在
       const memberExists = await validateMemberExists(currentUser.phone);
@@ -774,5 +784,6 @@
     </script>
   </body>
 </html>
+
 
 
