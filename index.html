@@ -709,11 +709,14 @@
       // 讀取 URL reorder 參數（優先使用）
       const urlParams = new URLSearchParams(window.location.search);
       const reorderParam = urlParams.get('reorder');
+      
       if (reorderParam) {
         try {
-          const decoded = decodeURIComponent(atob(decodeURIComponent(reorderParam)));
-          const items = JSON.parse(unescape(decoded));
-
+          // ✅ UTF-8 Base64 解碼
+          const bytes = Uint8Array.from(atob(reorderParam), c => c.charCodeAt(0));
+          const decoded = new TextDecoder().decode(bytes);
+          const items = JSON.parse(decoded);
+      
           if (Array.isArray(items) && items.length > 0) {
             items.forEach(item => addTakeoutItemToCart(item));
             renderCart();
@@ -759,6 +762,7 @@
     </script>
   </body>
 </html>
+
 
 
 
