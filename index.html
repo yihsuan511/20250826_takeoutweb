@@ -604,11 +604,9 @@
     }
     }
 
-
     // 初始化日期和時間選項
     generateDateOptions();
     generateTimeOptions(reservationDate.value);
-
 
     // 當日期改變時，重新生成時間
     reservationDate.addEventListener("change", () => {
@@ -621,7 +619,7 @@
     checkTimeSlotCapacity();
     });
 
-    
+  
       // 初始化後檢查預設時間的容量
       setTimeout(() => {
         checkTimeSlotCapacity();
@@ -709,14 +707,14 @@
       // 讀取 URL reorder 參數（優先使用）
       const urlParams = new URLSearchParams(window.location.search);
       const reorderParam = urlParams.get('reorder');
-      
+
       if (reorderParam) {
         try {
           // ✅ UTF-8 Base64 解碼
           const bytes = Uint8Array.from(atob(reorderParam), c => c.charCodeAt(0));
           const decoded = new TextDecoder().decode(bytes);
           const items = JSON.parse(decoded);
-      
+
           if (Array.isArray(items) && items.length > 0) {
             items.forEach(item => addTakeoutItemToCart(item));
             renderCart();
@@ -735,7 +733,7 @@
             const items = JSON.parse(reorderData);
             items.forEach(item => addTakeoutItemToCart(item));
             renderCart();
-            alert("已將歷史訂單加入購物車（外帶）！");
+            alert("已將歷史訂單加入購物車！");
           } catch (e) {
             console.error("localStorage 讀取 reorderItems 失敗", e);
           }
@@ -745,24 +743,36 @@
 
     // 將歷史訂單項目加入購物車（外帶）
     function addTakeoutItemToCart(item) {
-      const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
-      const customText = Object.values(customOptions).length ? `（${Object.values(customOptions).join("｜")}）` : "";
+      let customOptions = {};
+      if (item.custom_options) {
+          if (typeof item.custom_options === "string") {
+              try {
+                  customOptions = JSON.parse(item.custom_options);
+              } catch (e) {
+                  console.warn("custom_options 解析失敗:", item.custom_options);
+                  customOptions = {};
+              }
+          } else if (typeof item.custom_options === "object") {
+              customOptions = item.custom_options;
+          }
+      }
+
+      const customText = Object.values(customOptions).length
+          ? `（${Object.values(customOptions).join("｜")}）`
+          : "";
+
       const itemTotal = item.price * item.quantity;
 
       orderList.push({
-        name: item.item_name || item.name,
-        price: item.price,
-        quantity: item.quantity,
-        customization: customOptions,
-        text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`,
-        table_number: "外帶",
-        takeout: "外帶"
+          name: item.item_name || item.name,
+          price: item.price,
+          quantity: item.quantity,
+          customization: customOptions,
+          text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`,
+          table_number: "外帶",
+          takeout: "外帶"
       });
-    }
+  }
     </script>
   </body>
 </html>
-
-
-
-
