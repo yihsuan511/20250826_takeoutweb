@@ -150,8 +150,8 @@
     let orderList = [];
     let currentUser = null;
 
-     // 標記來源為外帶
-    // localStorage.setItem("historySource", "外帶");
+    // 標記來源為外帶
+    localStorage.setItem("historySource", "外帶");
 
     const menuData = {
       麵類: [{ name: "牛肉麵", price: 140 }, { name: "牛肉湯麵", price: 110 }, { name: "榨菜牛肉麵", price: 120 }, { name: "餛飩麵", price: 90 }, { name: "酸辣麵", price: 90 }, { name: "榨醬麵", price: 80 }, { name: "肉燥乾麵", price: 80 }],
@@ -317,22 +317,12 @@
       const pickup_display = `${reservationDate.value} ${reservationTime.value}:00`; // 用於前端顯示，保持原本用戶選擇的時間格式
       console.log('預約取餐時間:', pickup_time); // 除錯用
       
-      const loggedInPhone = sessionStorage.getItem("phone");
-      if (!loggedInPhone) {
-          if (confirm("需要先會員登入才能送出訂單，是否要立即登入？")) {
-              openModal('login');
-          }
-          return;
+      if (!currentUser) {
+        if (confirm("需要先會員登入才能送出訂單，是否要立即登入？")) {
+          openModal('login');
+        }
+        return;
       }
-
-// 如果有 sessionStorage，但 currentUser 可能沒設定，可以補：
-if (!currentUser) {
-    currentUser = {
-        phone: sessionStorage.getItem("phone"),
-        name: sessionStorage.getItem("name")
-    };
-    updateAuthUI();
-}
 
       // 驗證會員是否仍然存在
       const memberExists = await validateMemberExists(currentUser.phone);
@@ -705,85 +695,66 @@ if (!currentUser) {
     }
 
     window.onload = () => {
-
       renderCart();
 
-      // ✅ 只保留 sessionStorage 登入恢復
-      if (sessionStorage.getItem("phone") && sessionStorage.getItem("name")) {
-        currentUser = {
-          phone: sessionStorage.getItem("phone"),
-          name: sessionStorage.getItem("name")
-        };
+      // 恢復登入狀態
+      const phone = sessionStorage.getItem("phone");
+      const name = sessionStorage.getItem("name");
+      if (phone && name) {
+        currentUser = { phone, name };
         updateAuthUI();
       }
 
-      // ✅ 檢查是否有從歷史訂單帶過來的資料（URL方式）
+      // 讀取 URL reorder 參數（優先使用）
       const urlParams = new URLSearchParams(window.location.search);
       const reorderParam = urlParams.get('reorder');
-
       if (reorderParam) {
         try {
-          const decodedBase64 = decodeURIComponent(reorderParam);
-          const decodedJson = atob(decodedBase64);
-          const items = JSON.parse(decodeURIComponent(escape(decodedJson)));
+          const decoded = decodeURIComponent(atob(decodeURIComponent(reorderParam)));
+          const items = JSON.parse(unescape(decoded));
 
           if (Array.isArray(items) && items.length > 0) {
-            items.forEach(item => {
-              const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
-              const customText = Object.values(customOptions).length
-                ? `（${Object.values(customOptions).join("｜")}）`
-                : "";
-              const itemTotal = item.price * item.quantity;
-              orderList.push({
-                name: item.item_name || item.name,
-                price: item.price,
-                quantity: item.quantity,
-                customization: customOptions,
-                text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`,
-                table_number: "外帶",
-                takeout: "外帶"
-              });
-            });
-
+            items.forEach(item => addTakeoutItemToCart(item));
             renderCart();
-            alert("已將歷史訂單加入購物車！");
+            alert("已將歷史訂單加入購物車（外帶）！");
             window.history.replaceState({}, document.title, window.location.pathname);
           }
         } catch (e) {
-          console.error("讀取再次訂購資料失敗", e);
-          alert("讀取再次訂購資料失敗，請重新點餐。");
+          console.error("讀取 URL reorder 資料失敗", e);
+          alert("讀取歷史訂單失敗，請重新點餐。");
+        }
+      } else {
+        // localStorage 再次訂購保險機制
+        const reorderData = localStorage.getItem("reorderItems");
+        if (reorderData) {
+          try {
+            const items = JSON.parse(reorderData);
+            items.forEach(item => addTakeoutItemToCart(item));
+            renderCart();
+            alert("已將歷史訂單加入購物車（外帶）！");
+          } catch (e) {
+            console.error("localStorage 讀取 reorderItems 失敗", e);
+          }
         }
       }
-      // 🔁 若是從 localStorage 帶過來的（保險機制）
-      const reorderData = localStorage.getItem("reorderItems");
-      if (reorderData && !reorderParam) {
-        try {
-          const items = JSON.parse(reorderData);
-          items.forEach(item => {
-            const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
-            const customText = Object.values(customOptions).length
-              ? `（${Object.values(customOptions).join("｜")}）`
-              : "";
-            const itemTotal = item.price * item.quantity;
-            orderList.push({
-              name: item.item_name || item.name,
-              price: item.price,
-              quantity: item.quantity,
-              customization: customOptions,
-              text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`
-            });
-          });
+    };
 
-          renderCart();
-          alert("已將歷史訂單加入購物車！");
-        } catch (e) {
-          console.error("localStorage 讀取失敗", e);
-        }
-      }
+    // 將歷史訂單項目加入購物車（外帶）
+    function addTakeoutItemToCart(item) {
+      const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
+      const customText = Object.values(customOptions).length ? `（${Object.values(customOptions).join("｜")}）` : "";
+      const itemTotal = item.price * item.quantity;
+
+      orderList.push({
+        name: item.item_name || item.name,
+        price: item.price,
+        quantity: item.quantity,
+        customization: customOptions,
+        text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`,
+        table_number: "外帶",
+        takeout: "外帶"
+      });
     }
     </script>
   </body>
 </html>
-
-
-
