@@ -727,7 +727,9 @@
                 price: item.price,
                 quantity: item.quantity,
                 customization: customOptions,
-                text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`
+                text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`,
+                table_number: "外帶",
+                takeout: "外帶"
               });
             });
 
