@@ -745,33 +745,34 @@
         }
       }
       // 🔁 若是從 localStorage 帶過來的（保險機制）
-      // const reorderData = localStorage.getItem("reorderItems");
-      // if (reorderData && !reorderParam) {
-      //   try {
-      //     const items = JSON.parse(reorderData);
-      //     items.forEach(item => {
-      //       const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
-      //       const customText = Object.values(customOptions).length
-      //         ? `（${Object.values(customOptions).join("｜")}）`
-      //         : "";
-      //       const itemTotal = item.price * item.quantity;
-      //       orderList.push({
-      //         name: item.item_name || item.name,
-      //         price: item.price,
-      //         quantity: item.quantity,
-      //         customization: customOptions,
-      //         text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`
-      //       });
-      //     });
+      const reorderData = localStorage.getItem("reorderItems");
+      if (reorderData && !reorderParam) {
+        try {
+          const items = JSON.parse(reorderData);
+          items.forEach(item => {
+            const customOptions = item.custom_options ? JSON.parse(item.custom_options) : {};
+            const customText = Object.values(customOptions).length
+              ? `（${Object.values(customOptions).join("｜")}）`
+              : "";
+            const itemTotal = item.price * item.quantity;
+            orderList.push({
+              name: item.item_name || item.name,
+              price: item.price,
+              quantity: item.quantity,
+              customization: customOptions,
+              text: `${item.item_name || item.name}${customText} x ${item.quantity} = ${itemTotal} 元`
+            });
+          });
 
-      //     renderCart();
-      //     alert("已將歷史訂單加入購物車！");
-      //   } catch (e) {
-      //     console.error("localStorage 讀取失敗", e);
-      //   }
-      // }
+          renderCart();
+          alert("已將歷史訂單加入購物車！");
+        } catch (e) {
+          console.error("localStorage 讀取失敗", e);
+        }
+      }
     }
     </script>
   </body>
 </html>
+
 
