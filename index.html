@@ -372,7 +372,7 @@
     };
     console.log('送出的訂單資料:', orderData);
     try {
-      const response = await fetch('${API_BASE}/api/orders', {
+      const response = await fetch(`${API_BASE}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
@@ -419,13 +419,13 @@
           let response;
           if (type === "register") {
             console.log("送出註冊資料:", { name, phone, password });
-            response = await fetch('${API_BASE}/api/member/register', {
+            response = await fetch(`${API_BASE}/api/member/register`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ name, phone, password })
             });
           } else {
-            response = await fetch('${API_BASE}/api/member/login', {
+            response = await fetch(`${API_BASE}/api/member/login`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ phone, password })
