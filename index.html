@@ -724,7 +724,7 @@
           if (Array.isArray(items) && items.length > 0) {
             items.forEach(item => addTakeoutItemToCart(item));
             renderCart();
-            alert("已將歷史訂單加入購物車（外帶）！");
+            alert("已將歷史訂單加入購物車！");
             window.history.replaceState({}, document.title, window.location.pathname);
           }
         } catch (e) {
@@ -782,4 +782,5 @@
     </script>
   </body>
 </html>
+
 
