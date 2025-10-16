@@ -152,6 +152,11 @@
      // 標記來源為外帶
     localStorage.setItem("historySource", "外帶");
 
+    if(sessionStorage.getItem("phone")){
+      localStorage.setItem("tempPhone", sessionStorage.getItem("phone"));
+      localStorage.setItem("tempName", sessionStorage.getItem("name"));
+    }
+    
     const menuData = {
       麵類: [{ name: "牛肉麵", price: 140 }, { name: "牛肉湯麵", price: 110 }, { name: "榨菜牛肉麵", price: 120 }, { name: "餛飩麵", price: 90 }, { name: "酸辣麵", price: 90 }, { name: "榨醬麵", price: 80 }, { name: "肉燥乾麵", price: 80 }],
       餃類: [{ name: "水餃（10顆）", price: 60 }, { name: "牛肉湯餃", price: 110 }, { name: "酸辣湯餃", price: 100 }],
@@ -503,13 +508,11 @@
     const reservationDate = document.getElementById("reservationDate");
     const reservationTime = document.getElementById("reservationTime");
 
-
     // 獲取星期幾的中文名稱
     function getWeekdayName(date) {
     const weekdays = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
     return weekdays[date.getDay()];
     }
-
 
     // 生成日期選項（顯示格式：9/21 今天、9/22 週一等）
     function generateDateOptions() {
@@ -537,38 +540,46 @@
     }
     }
 
-
     function generateTimeOptions(selectedDateStr) {
     reservationTime.innerHTML = "";
     const storeStartHour = 11; // 店家營業時間開始
     const endHour = 20; // 到 20:00
     const latestMinute = 30; // 最晚 19:30
 
-
     let now = new Date();
     let selectedDate = new Date(selectedDateStr);
     let isToday = selectedDate.toDateString() === now.toDateString();
-      // 決定開始時間
+    
+    // 決定開始時間
     let startHour = storeStartHour;
     let startMinute = 0;
-      if (isToday) {
-      // 如果是今天，從當前時間的下一個10分鐘整數開始
-      startHour = now.getHours();
-      startMinute = Math.ceil((now.getMinutes() + 1) / 10) * 10; // 至少比現在晚1分鐘，並取10分鐘整數
+    
+    if (isToday) {
+      // 1. 計算現在時間 + 20 分鐘
+      // 複製現在時間，並加上 20 分鐘
+      const twentyMinLater = new Date(now.getTime() + 20 * 60000); 
       
-      // 如果分鐘進位到60，小時+1
+      // 2. 獲取 20 分鐘後的時間
+      let targetHour = twentyMinLater.getHours();
+      let targetMinute = twentyMinLater.getMinutes();
+
+      // 3. 將分鐘數四捨五入到最近的 10 分鐘整數 (向上取整)
+      // 例如：23 -> 30, 31 -> 40, 40 -> 40
+      startMinute = Math.ceil(targetMinute / 10) * 10;
+      startHour = targetHour;
+      
+      // 4. 處理分鐘進位到 60 的情況 (例如 11:51 變成 12:00)
       if (startMinute >= 60) {
         startHour += 1;
         startMinute = 0;
       }
       
-      // 如果當前時間早於店家營業時間，則從店家營業時間開始
+      // 5. 確保不會早於店家營業時間
       if (startHour < storeStartHour) {
         startHour = storeStartHour;
         startMinute = 0;
       }
     }
-
 
     for (let hour = startHour; hour < endHour; hour++) {
       let minuteStart = (hour === startHour) ? startMinute : 0;
@@ -612,15 +623,11 @@
     });
 
     
-    // 初始化後檢查預設時間的容量
-    setTimeout(() => {
-      checkTimeSlotCapacity();
-    }, 100);
+      // 初始化後檢查預設時間的容量
+      setTimeout(() => {
+        checkTimeSlotCapacity();
+      }, 100);
 
-    // 初始化登入狀態
-    if (sessionStorage.getItem("phone") && sessionStorage.getItem("name")) {
-        currentUser = { phone: sessionStorage.getItem("phone"), name: sessionStorage.getItem("name") };          updateAuthUI();
-      }
      // 頁面載入時檢查並顯示提示
      async function checkAndShowCapacityWarning() {
        try {
@@ -688,16 +695,23 @@
         capacityInfo.textContent = "⚠️ 無法檢查時段容量，請稍後再試";
       }
     }
-    
-        window.onload = () => {
-      const savedPhone = localStorage.getItem("phone");
-      const savedName = localStorage.getItem("name");
-      if (savedPhone && savedName) {
-        currentUser = { phone: savedPhone, name: savedName };
-        updateAuthUI();
-      }
 
+    window.onload = () => {
       renderCart(); // 先渲染現有的購物車
+
+      if(localStorage.getItem("tempPhone")){
+        currentUser = {
+          phone: localStorage.getItem("tempPhone"),
+          name: localStorage.getItem("tempName")
+        };
+        sessionStorage.setItem("phone", currentUser.phone);
+        sessionStorage.setItem("name", currentUser.name);
+        updateAuthUI();
+
+        //清除臨時資料
+        localStorage.removeItem("tempPhone");
+        localStorage.removeItem("tempName");
+      }
 
       // 檢查是否有從歷史訂單帶過來的資料
       const urlParams = new URLSearchParams(window.location.search);
@@ -770,6 +784,3 @@
     </script>
   </body>
 </html>
-
-
-
