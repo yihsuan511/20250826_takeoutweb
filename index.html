@@ -697,8 +697,8 @@
       renderCart();
 
       // 恢復登入狀態
-      const phone = sessionStorage.getItem("phone");
-      const name = sessionStorage.getItem("name");
+      const phone = sessionStorage.getItem("phone") || localStorage.getItem("phone");
+      const name = sessionStorage.getItem("name") || localStorage.getItem("name");
       if (phone && name) {
         currentUser = { phone, name };
         updateAuthUI();
@@ -782,5 +782,6 @@
     </script>
   </body>
 </html>
+
 
 
